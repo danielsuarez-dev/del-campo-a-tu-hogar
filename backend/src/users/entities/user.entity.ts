@@ -17,6 +17,9 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   phone: string;
 
+  @Column({ type: 'varchar', select: false })
+  password: string;
+
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;
 }
