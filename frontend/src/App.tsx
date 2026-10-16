@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Product {
   id: string;
   name: string;
@@ -16,6 +18,7 @@ export default function App() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'cliente',
     phone: '',
   });
@@ -23,7 +26,7 @@ export default function App() {
 
   // Cargar productos
   useEffect(() => {
-    fetch('http://localhost:3000/products')
+    fetch(`${API_URL}/products`)
       .then((res) => res.json())
       .then((data) => setProducts(data))
       .catch((err) => console.error('Error cargando productos:', err));
@@ -33,7 +36,7 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/users', {
+      const res = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -68,6 +71,14 @@ export default function App() {
             placeholder="Correo electrónico"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            minLength={6}
             required
           />
           <input
