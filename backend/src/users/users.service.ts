@@ -71,7 +71,7 @@ export class UsersService {
   }
 
   private removePassword(user: User) {
-    const { password, ...result } = user;
+    const { password: _password, ...result } = user;
     return result;
   }
 }

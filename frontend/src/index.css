@@ -31,7 +31,11 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+:root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
