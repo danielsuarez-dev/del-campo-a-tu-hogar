@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { LoaderCircle, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import AuthCard from '../components/AuthCard';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,50 +50,85 @@ export default function Login() {
   };
 
   return (
-    <section style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>Iniciar Sesión</h2>
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
-      >
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <div style={{ textAlign: 'right' }}>
-          <Link to="/forgot-password" style={{ fontSize: '0.9rem' }}>
-            ¿Olvidaste tu contraseña?
-          </Link>
+    <AuthCard
+      title="Iniciar sesión"
+      subtitle="Ingresa tus datos para continuar."
+      icon={<LogIn className="h-7 w-7" aria-hidden="true" />}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div>
+          <label
+            htmlFor="login-email"
+            className="mb-1 block text-base font-semibold text-gray-700"
+          >
+            Correo electrónico
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            placeholder="ejemplo@correo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+            className="min-h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-lg text-gray-900 transition-colors placeholder:text-gray-400 focus:border-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+          />
         </div>
-        <button type="submit" disabled={isLoading} style={{ padding: '0.5rem', cursor: 'pointer' }}>
+
+        <div>
+          <label
+            htmlFor="login-password"
+            className="mb-1 block text-base font-semibold text-gray-700"
+          >
+            Contraseña
+          </label>
+          <input
+            id="login-password"
+            type="password"
+            placeholder="Tu contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+            className="min-h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-lg text-gray-900 transition-colors placeholder:text-gray-400 focus:border-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+          />
+        </div>
+
+        <Link
+          to="/forgot-password"
+          className="text-right text-base font-semibold text-emerald-700 underline hover:text-emerald-900"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-emerald-600 px-6 text-lg font-bold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:bg-gray-300"
+        >
+          {isLoading ? (
+            <LoaderCircle className="h-6 w-6 animate-spin" aria-hidden="true" />
+          ) : (
+            <LogIn className="h-6 w-6" aria-hidden="true" />
+          )}
           {isLoading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-gray-200" />
+        <span className="text-sm font-bold text-gray-400">o</span>
+        <span className="h-px flex-1 bg-gray-200" />
+      </div>
 
       <button
         type="button"
         onClick={handleGoogleLogin}
         disabled={isGoogleLoading}
         title="Iniciar sesión con Google"
-        className="w-12 h-12 rounded-full border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50 transition-all mx-auto mt-4 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-6 text-lg font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <svg
-          className="h-6 w-6"
-          width="24"
-          height="24"
-          viewBox="0 0 48 48"
-          aria-hidden="true"
-        >
+        <svg className="h-6 w-6" width="24" height="24" viewBox="0 0 48 48" aria-hidden="true">
           <path
             fill="#EA4335"
             d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -109,13 +146,27 @@ export default function Login() {
             d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
           />
         </svg>
+        {isGoogleLoading ? 'Abriendo Google...' : 'Continuar con Google'}
       </button>
 
-      {error && <p style={{ color: '#c62828', fontWeight: 'bold' }}>{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-base font-semibold text-red-700"
+        >
+          {error}
+        </p>
+      )}
 
-      <p style={{ marginTop: '1rem' }}>
-        ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+      <p className="mt-6 text-center text-base text-gray-600">
+        ¿No tienes cuenta?{' '}
+        <Link
+          to="/register"
+          className="font-bold text-emerald-700 underline hover:text-emerald-900"
+        >
+          Regístrate aquí
+        </Link>
       </p>
-    </section>
+    </AuthCard>
   );
 }

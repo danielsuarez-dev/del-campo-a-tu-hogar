@@ -1,21 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useCart, type CartProduct } from '../context/CartContext';
+import { LoaderCircle, PackageOpen, TriangleAlert } from 'lucide-react';
+import Hero from '../components/Hero';
+import ProductCard from '../components/ProductCard';
+import type { ProductData } from '../components/ProductCard';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-interface Product extends CartProduct {
-  description?: string;
-}
-
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const { addItem } = useCart();
+  const [products, setProducts] = useState<ProductData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const loadProducts = useCallback(() => {
+    setIsLoading(true);
+    setHasError(false);
     fetch(`${API_URL}/products`)
       .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.error('Error cargando productos:', err));
+      .then((data) => setProducts(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error('Error cargando productos:', err);
+        setHasError(true);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -23,45 +29,64 @@ export default function Products() {
   }, [loadProducts]);
 
   return (
-    <section style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
-      <h2>Productos Disponibles</h2>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: '1rem',
-        }}
+    <>
+      <Hero />
+
+      <section
+        className="mx-auto w-full max-w-7xl px-4 py-10 sm:py-12"
+        aria-labelledby="productos-titulo"
       >
-        {products.map((p) => (
-          <div
-            key={p.id}
-            style={{ border: '1px solid #e0e0e0', borderRadius: '10px', padding: '1rem' }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', color: '#1b5e20' }}>{p.name}</h3>
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              {p.description || 'Producto artesanal'}
+        <h2 id="productos-titulo" className="text-3xl font-extrabold text-gray-900">
+          Nuestros productos
+        </h2>
+        <p className="mt-2 text-lg text-gray-600">
+          Elige lo que quieras y presiona «Agregar al carrito».
+        </p>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-4 py-20 text-gray-500">
+            <LoaderCircle
+              className="h-12 w-12 animate-spin text-emerald-600"
+              aria-hidden="true"
+            />
+            <p className="text-lg font-semibold">Cargando productos...</p>
+          </div>
+        ) : hasError ? (
+          <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
+            <TriangleAlert
+              className="mx-auto h-10 w-10 text-red-600"
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-lg font-bold text-red-800">
+              No pudimos cargar los productos.
             </p>
-            <p style={{ fontWeight: 'bold', fontSize: '16px', margin: '8px 0' }}>
-              Precio: ${p.price}
-            </p>
-            <p style={{ color: '#2e7d32', fontSize: '14px', margin: 0 }}>
-              Stock: {p.stock} unidades
-            </p>
+            <p className="mt-1 text-red-700">Revisa tu conexión e inténtalo otra vez.</p>
             <button
-              onClick={() => addItem(p)}
-              disabled={p.stock <= 0}
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem',
-                cursor: p.stock > 0 ? 'pointer' : 'not-allowed',
-                width: '100%',
-              }}
+              type="button"
+              onClick={loadProducts}
+              className="mt-5 min-h-12 rounded-xl bg-emerald-600 px-6 text-lg font-bold text-white transition-colors hover:bg-emerald-700"
             >
-              {p.stock > 0 ? 'Agregar al carrito' : 'Sin stock'}
+              Intentar de nuevo
             </button>
           </div>
-        ))}
-      </div>
-    </section>
+        ) : products.length === 0 ? (
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 text-center">
+            <PackageOpen
+              className="mx-auto h-12 w-12 text-emerald-600"
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-lg font-bold text-gray-900">
+              No hay productos disponibles ahora mismo.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 }

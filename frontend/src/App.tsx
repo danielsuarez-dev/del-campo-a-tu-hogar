@@ -15,7 +15,7 @@ export default function App() {
       <CartProvider>
         <BrowserRouter>
           <Navbar />
-          <main>
+          <main className="flex-1">
             <Routes>
               <Route path="/" element={<Products />} />
               <Route path="/login" element={<Login />} />
