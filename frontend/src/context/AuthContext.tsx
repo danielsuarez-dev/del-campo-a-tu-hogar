@@ -30,6 +30,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
@@ -49,6 +50,8 @@ function readStoredSession(): AuthSession | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(readStoredSession);
+  // Si hay sesión guardada no hay nada que cargar; si no, esperamos INITIAL_SESSION
+  const [isLoading, setIsLoading] = useState(() => !session);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -87,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, supabaseSession: Session | null) => {
+        // INITIAL_SESSION siempre se emite al suscribirse (aunque no haya sesión):
+        // es nuestra señal de que el estado de auth inicial ya resolvió.
+        setIsLoading(false);
+
         if (supabaseSession && supabaseSession.user) {
           const userMetadata = supabaseSession.user.user_metadata || {};
           const user: AuthUser = {
@@ -122,10 +129,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       token: session?.token ?? null,
       isAuthenticated: Boolean(session?.token),
+      isLoading,
       login,
       logout,
     }),
-    [session, login, logout],
+    [session, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

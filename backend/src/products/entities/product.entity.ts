@@ -12,7 +12,13 @@ export class Product {
   name: string;
 
   @Column({ nullable: true })
+  category: string;
+
+  @Column({ nullable: true })
   description: string;
+
+  @Column({ name: 'image_url', nullable: true })
+  image_url: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Leaf, ShieldCheck, Sprout, Truck } from 'lucide-react';
+import { Leaf, ShieldCheck, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BENEFITS: { icon: LucideIcon; text: string }[] = [
@@ -17,16 +17,14 @@ export default function Hero() {
   return (
     <section className="bg-gradient-to-br from-emerald-700 via-emerald-700 to-green-900">
       <div className="mx-auto max-w-7xl px-4 py-14 text-center sm:py-20">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
-          <Sprout className="h-9 w-9 text-white" aria-hidden="true" />
-        </span>
+        <img src="/LOGO.jpg" alt="Del Campo a tu Hogar" className="h-16 w-16 mx-auto mb-4 object-contain rounded-full shadow-sm" />
 
         <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
           {greeting}
         </h1>
 
         <p className="mx-auto mt-4 max-w-2xl text-xl text-emerald-50">
-          Productos frescos y artesanales, cultivados con amor y directo del
+          Productos frescos y artesanales, hechos con amor y directo del
           campo a tu mesa.
         </p>
 

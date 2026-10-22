@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Leaf, ShoppingBasket } from 'lucide-react';
 import { useCart, type CartProduct } from '../context/CartContext';
+import { formatPrice } from '../lib/formatPrice';
 
 export interface ProductData extends CartProduct {
   description?: string;
@@ -11,13 +12,19 @@ export interface ProductData extends CartProduct {
 }
 
 function getProductImage(product: ProductData): string | undefined {
-  return product.image ?? product.imageUrl ?? product.image_url ?? product.imagen;
+  return product.image_url || product.imageUrl || product.image || product.imagen;
 }
 
 export default function ProductCard({ product }: { product: ProductData }) {
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = useState(false);
+  const [imgError, setImgError] = useState<string | undefined>(undefined);
   const timerRef = useRef<number | undefined>(undefined);
+
+  const outOfStock = product.stock <= 0;
+  const image = getProductImage(product);
+  // Si la URL cambia, el fallo anterior ya no aplica (sin necesidad de un effect)
+  const showImage = Boolean(image) && imgError !== image;
 
   useEffect(() => {
     return () => window.clearTimeout(timerRef.current);
@@ -30,23 +37,21 @@ export default function ProductCard({ product }: { product: ProductData }) {
     timerRef.current = window.setTimeout(() => setJustAdded(false), 1500);
   };
 
-  const outOfStock = product.stock <= 0;
-  const image = getProductImage(product);
-
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-      {image ? (
+      {showImage ? (
         <div className="m-3 overflow-hidden rounded-xl bg-gray-50">
           <img
-            src={image}
+            src={product.image_url || product.imageUrl || image}
             alt={product.name}
             loading="lazy"
+            onError={() => setImgError(image)}
             className="h-44 w-full object-cover"
           />
         </div>
       ) : (
         <div
-          className="m-3 flex h-44 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"
+          className="m-3 flex h-44 items-center justify-center rounded-xl bg-gray-100 text-gray-400"
           aria-hidden="true"
         >
           <Leaf className="h-12 w-12" />
@@ -61,7 +66,7 @@ export default function ProductCard({ product }: { product: ProductData }) {
         </p>
 
         <p className="mt-4 text-3xl font-extrabold text-gray-900">
-          ${Number(product.price).toFixed(2)}
+          {formatPrice(product.price)}
         </p>
 
         <p className="mt-1 text-sm text-gray-500">

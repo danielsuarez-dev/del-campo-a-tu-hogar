@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { formatPrice } from '../lib/formatPrice';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -34,29 +36,78 @@ export default function Cart() {
     setIsError(false);
 
     try {
-      const res = await fetch(`${API_URL}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // 1) Crear orden en Supabase (normalizada)
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
           user_id: user.id,
-          items: items.map((item) => ({
-            product_id: item.product.id,
-            quantity: item.quantity,
-          })),
-        }),
-      });
+          total: Number(total.toFixed(2)),
+          status: 'pending',
+        })
+        .select()
+        .single();
 
-      if (res.status === 201) {
-        clearCart();
-        setCheckoutMessage('Pedido Exitoso');
-        setIsError(false);
-      } else {
-        const error = await res.json().catch(() => null);
-        setCheckoutMessage(error?.message ?? 'Error al procesar el pedido');
-        setIsError(true);
+      if (orderError || !order) {
+        throw new Error(orderError?.message || 'No se pudo crear la orden');
       }
-    } catch {
-      setCheckoutMessage('Error de conexión con el backend');
+
+      // 2) Crear items de la orden
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: Number(item.product.price),
+      }));
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+
+      if (itemsError) {
+        throw new Error(itemsError.message);
+      }
+
+      // 3) Actualizar stock de productos
+      for (const item of items) {
+        try {
+          const { data: productData } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product.id)
+            .single();
+
+          if (productData) {
+            const newStock = Math.max(0, (productData.stock || 0) - item.quantity);
+            await supabase
+              .from('products')
+              .update({ stock: newStock })
+              .eq('id', item.product.id);
+          }
+        } catch (err) {
+          console.error('Error actualizando stock:', err);
+        }
+      }
+
+      // Mantener compatibilidad con backend
+      try {
+        await fetch(`${API_URL}/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            items: items.map((item) => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+            })),
+          }),
+        });
+      } catch {
+        // Ignorar
+      }
+
+      clearCart();
+      setCheckoutMessage('Pedido Exitoso');
+      setIsError(false);
+    } catch (err) {
+      setCheckoutMessage(err instanceof Error ? err.message : 'Error al procesar el pedido');
       setIsError(true);
     } finally {
       setIsCheckingOut(false);
@@ -101,7 +152,7 @@ export default function Cart() {
                 <div className="min-w-[11rem] flex-1">
                   <p className="text-lg font-bold text-gray-900">{item.product.name}</p>
                   <p className="text-sm text-gray-500">
-                    Precio por unidad: ${Number(item.product.price).toFixed(2)}
+                    Precio por unidad: {formatPrice(item.product.price)}
                   </p>
                 </div>
 
@@ -130,7 +181,7 @@ export default function Cart() {
                 </div>
 
                 <p className="w-28 text-right text-xl font-extrabold text-gray-900">
-                  ${(Number(item.product.price) * item.quantity).toFixed(2)}
+                  {formatPrice(Number(item.product.price) * item.quantity)}
                 </p>
 
                 <button
@@ -149,7 +200,7 @@ export default function Cart() {
           <div className="mt-8 flex items-center justify-between rounded-2xl bg-emerald-50 p-6">
             <span className="text-xl font-bold text-emerald-900">Total</span>
             <span className="text-3xl font-extrabold text-emerald-900">
-              ${total.toFixed(2)}
+              {formatPrice(total)}
             </span>
           </div>
 
